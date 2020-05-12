@@ -1,10 +1,10 @@
-
+from PIL import Image
 
 class Pages():
 	def __init__(self, hc):
 		self.hc = hc
 		self.pages = [
-			#    name       filename			  	     left top width height
+			#    name       	filename			     left top width height
 			Page('timeout',		'images/timeout.png',	(270, 140, 450, 300)),
 			Page('loading',		'images/loading.png', 	(160, 10,  800, 100)),			
 			Page('main', 		'images/main.png',		(20,  400, 100, 150)),
@@ -17,6 +17,7 @@ class Pages():
 			Page('a_wait',		'images/a_wait.png',	(620, 0,   150, 50)),
 			Page('a_wait2',		'images/a_wait2.png',	(620, 0,   250, 50)),
 			Page('a_enemy',		'images/a_enemy.png',	(640, 430, 150, 50)),
+			Page('a_enemy2',	'images/a_enemy2.png',	(640, 430, 150, 50)),
 			Page('a_combat',	'images/a_combat.png',	(450, 10,  100, 50)),
 			Page('a_defeat',	'images/a_defeat.png',	(420, 95,  150, 50)),
 			Page('a_victory',	'images/a_victory.png',	(420, 95,  150, 50)),
@@ -29,22 +30,27 @@ class Pages():
 		return self.pages_by_name.get(name)
 
 	def active_page(self):
+		# Benchmark:
+		# 10x full undetected  is_active->verify_image : 18.6 sec
+		# 10x is_active->verify_image if stopping at man: 3.6 sec
+		# 10x full undetected  w. screenshot : 2.1 sec
+		screenshot = self.hc.window.capture_as_image()
 		for page in self.pages:
-			# TODO - benchmark par to vai nav ātrāk taisīt vienu pilno screenshot
-			if page.is_active(self.hc):
-				return page
+			if page.is_active(self.hc, screenshot=screenshot):
+				return page, screenshot
 		self.hc.screenshot('unknown')
-		return None
+		return None, None
 
 
 class Page():
 	def __init__(self, name, verification_image, verification_region = None):
 		self.name = name
-		self.verification_image = verification_image
+		self.verification_image_name = verification_image
+		self.verification_image = Image.open(verification_image)
 		self.verification_region = verification_region
 
 	def __str__(self):
 		return f'Page({self.name})'
 
-	def is_active(self, hc, must_succeed=False):
-		return hc.verify_image(self.verification_image, self.verification_region, must_succeed, self.name)
+	def is_active(self, hc, must_succeed=False, screenshot=None):
+		return hc.verify_image(self.verification_image, self.verification_region, must_succeed, self.name, screenshot)

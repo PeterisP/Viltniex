@@ -2,6 +2,8 @@ from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import emulator_control
 
+from timeit import default_timer as timer
+
 class Window(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)               
@@ -28,16 +30,18 @@ class Window(Frame):
         self.initButton.grid(column=1, row=0, padx=5, pady=5)
         arenaButton = Button(pogas, text='Arena', command=self.run_arena)
         arenaButton.grid(column=2, row=0, padx=5, pady=5)
+        stopButton = Button(pogas, text='Stop', command=self.stop_agents)
+        stopButton.grid(column=3, row=0, padx=5, pady=5)
         screenshotButton = Button(pogas, text='Screenshot', command=self.screenshot)
-        screenshotButton.grid(column=3, row=0, padx=5, pady=5)
+        screenshotButton.grid(column=4, row=0, padx=5, pady=5)
         whereamiButton = Button(pogas, text='Where am I?', command=self.whereami)
-        whereamiButton.grid(column=4, row=0, padx=5, pady=5)
+        whereamiButton.grid(column=5, row=0, padx=5, pady=5)
 
         self.buttons_that_need_hc = [arenaButton, screenshotButton, whereamiButton]
 
     def init_hc(self):
         try:
-            self.hc = emulator_control.HC()
+            self.hc = emulator_control.HC(self.master)
             emulator_control.log_error('Initialized HC')
             for button in self.buttons_that_need_hc:
                 button['state'] = NORMAL
@@ -53,13 +57,25 @@ class Window(Frame):
         assert self.hc is not None, 'HC connection not initialized'
         self.hc.run_arena()
 
+    def stop_agents(self):
+        assert self.hc is not None, 'HC connection not initialized'
+        self.hc.stop_agents()
+
     def screenshot(self):
         assert self.hc is not None, 'HC connection not initialized'
         self.hc.screenshot()
 
-    def whereami(self):
+    def whereami(self, benchmark=False):
         assert self.hc is not None, 'HC connection not initialized'
-        page = self.hc.pages.active_page()
+        page, _ = self.hc.pages.active_page()
+
+        if benchmark:        
+            start = timer()
+            for _ in range(10):
+                page, _ = self.hc.pages.active_page()
+            end = timer()
+            print('Timing active_page(): ', end - start)
+
         if page:
             print(page)
 
