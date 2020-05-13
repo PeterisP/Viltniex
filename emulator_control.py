@@ -139,8 +139,9 @@ class HC():
 				self.screenshot(f'didnotfind')
 		return coords  # FIXME - coord reference point may differ depending on params
 
-	def screenshot(self, prefix='screenshot'):
-		screenshot = self.window.capture_as_image()
+	def screenshot(self, prefix='screenshot', screenshot = None):
+		if not screenshot:
+			screenshot = self.window.capture_as_image()
 		now = datetime.datetime.now()			
 		filename = f'screenshots/{prefix}_{now:%Y%m%d_%H%M%S}.png'
 		screenshot.save(filename)

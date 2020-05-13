@@ -22,8 +22,9 @@ class Pages():
 			Page('a_defeat',	'images/a_defeat.png',	(420, 95,  150, 50)),
 			Page('a_victory',	'images/a_victory.png',	(420, 95,  150, 50)),
 			Page('a_end',		'images/a_end.png',		(840, 70,  100, 50)),
+			Page('a_end2',		'images/a_end2.png',	(790, 65,  150, 70)),
 		]
-		# TODO - timeout un loading jūk!!
+		# TODO - timeout and loading may be confused!!
 		self.pages_by_name = {page.name:page for page in self.pages}
 
 	def get_page(self, name):
@@ -38,7 +39,7 @@ class Pages():
 		for page in self.pages:
 			if page.is_active(self.hc, screenshot=screenshot):
 				return page, screenshot
-		self.hc.screenshot('unknown')
+		self.hc.screenshot('unknown', screenshot=screenshot)
 		return None, None
 
 
