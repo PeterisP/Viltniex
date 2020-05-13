@@ -5,7 +5,7 @@ from ocr import recognize
 from PIL import ImageDraw
 from timeit import default_timer as timer
 
-BEATABLE_STRENGTH = 110000
+BEATABLE_STRENGTH = 120000
 
 
 STARTING = 1

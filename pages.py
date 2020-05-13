@@ -23,6 +23,7 @@ class Pages():
 			Page('a_victory',	'images/a_victory.png',	(420, 95,  150, 50)),
 			Page('a_end',		'images/a_end.png',		(840, 70,  100, 50)),
 			Page('a_end2',		'images/a_end2.png',	(790, 65,  150, 70)),
+			Page('a_store',		'images/a_store.png',	(230, 40,  250, 60))
 		]
 		# TODO - timeout and loading may be confused!!
 		self.pages_by_name = {page.name:page for page in self.pages}
