@@ -60,12 +60,18 @@ class ArenaAgent():
 		elif active_page.name == 'map':
 			self.hc.human_click(330, 400, 460, 490) # Arena
 			delay = 1
+		elif active_page.name == 'a_store':
+			self.hc.human_click(685, 95, 830, 140) # Close
+			delay = 1
 		elif active_page.name == 'a_tickets':
 			self.hc.human_click(170, 130, 300, 160) # for food
 			delay = 1
 		elif active_page.name == 'a_food':
-			# TODO - check if enough apples
 			self.hc.human_click(230, 440, 400, 480) # Participate
+		elif active_page.name == 'a_nofood':
+			self.hc.human_click(510, 330, 615, 375) # No
+			self.hc.log_error('Out of apples !')
+			self.hc.stop_agents()
 		elif active_page.name == 'a_team':
 			self.hc.human_click(320, 440, 460, 490) # Confirm
 			self.round = 1
@@ -141,18 +147,19 @@ class ArenaAgent():
 			rank = self.find_me(screenshot)
 			self.hc.log_event(f'')
 			self.hc.log_event(f'==================================')
-			self.hc.log_event(f'Arena ending - {(timer()-self.start)/60:.1f} min total, {(self.match_start-self.start)/60:.1f} min waiting')
+			if self.start and self.match_start:
+				self.hc.log_event(f'Arena ending - {(timer()-self.start)/60:.1f} min total, {(self.match_start-self.start)/60:.1f} min waiting')
 			self.hc.log_event(f'Rank {rank}, {self.victories} wins')
 			self.state = STARTING
 			self.start = timer()
+			self.match_start = None
 			self.victories = 0
 			self.round = 1
 			# self.hc.stop_agents()
 			self.hc.human_click(805,  65, 940, 130) # Home
 		else:
-			self.hc.log_error("I just don't know what to do with myself...")
-			self.hc.log_event(str(self.state))
-			self.hc.screenshot('confused_ArenaAgent')
+			self.hc.log_error(f"I just don't know what to do with myself... {active_page.name} {str(self.state)}")
+			self.hc.screenshot(f'confused_ArenaAgent_{active_page.name}')
 			self.hc.stop_agents()
 			delay = 2
 		self.just_was_in_combat = False

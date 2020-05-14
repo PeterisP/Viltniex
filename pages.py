@@ -11,6 +11,7 @@ class Pages():
 			Page('map', 		'images/map.png',		(20,  400, 100, 150)),
 			Page('a_tickets',	'images/a_tickets.png',	(170, 120, 300, 60)),
 			Page('a_food',		'images/a_food.png',	(160, 120, 320, 60)),
+			Page('a_nofood',	'images/a_nofood.png',	(290, 150, 400, 150)),
 			Page('a_team',		'images/a_team.png',	(400, 25,  200, 50)),
 			Page('a_looking',	'images/a_looking.png',	(170, 310, 300, 50)),
 			Page('a_next',		'images/a_next.png',	(620, 0,   250, 50)),
@@ -20,7 +21,7 @@ class Pages():
 			Page('a_enemy2',	'images/a_enemy2.png',	(640, 430, 150, 50)),
 			Page('a_combat',	'images/a_combat.png',	(450, 10,  100, 50)),
 			Page('a_defeat',	'images/a_defeat.png',	(420, 95,  150, 50)),
-			Page('a_victory',	'images/a_victory.png',	(420, 95,  150, 50)),
+			Page('a_victory',	'images/a_victory.png',	(420, 95,  150, 50), confidence=0.9),
 			Page('a_end',		'images/a_end.png',		(840, 70,  100, 50)),
 			Page('a_end2',		'images/a_end2.png',	(790, 65,  150, 70)),
 			Page('a_store',		'images/a_store.png',	(230, 40,  250, 60))
@@ -45,14 +46,15 @@ class Pages():
 
 
 class Page():
-	def __init__(self, name, verification_image, verification_region = None):
+	def __init__(self, name, verification_image, verification_region = None, confidence = 1):
 		self.name = name
 		self.verification_image_name = verification_image
 		self.verification_image = Image.open(verification_image)
 		self.verification_region = verification_region
+		self.confidence = confidence
 
 	def __str__(self):
 		return f'Page({self.name})'
 
 	def is_active(self, hc, must_succeed=False, screenshot=None):
-		return hc.verify_image(self.verification_image, self.verification_region, must_succeed, self.name, screenshot)
+		return hc.verify_image(self.verification_image, self.verification_region, must_succeed, self.name, screenshot, self.confidence)

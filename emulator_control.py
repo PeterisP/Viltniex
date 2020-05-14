@@ -4,7 +4,7 @@ import datetime
 from pages import Page, Pages
 from agent import ArenaAgent
 from random import gauss, randrange
-from PIL import ImageDraw
+from PIL import ImageDraw, Image
 from win32api import GetCursorPos
 
 def log_event(message):
@@ -119,9 +119,11 @@ class HC():
 		return coords
 
 	# region is left, top, width, height
-	def verify_image(self, image, region=None, must_succeed=False, description='', screenshot=None):
+	def verify_image(self, image, region=None, must_succeed=False, description='', screenshot=None, confidence=1):
 		if screenshot:
 			coords = pyscreeze.locate(image, screenshot, region=region)
+			if not coords and confidence < 1:
+				coords = pyscreeze.locate(image, screenshot, region=region, confidence=confidence)
 		else:
 			hc_rect = self.window.rectangle()
 			if region:
@@ -130,6 +132,8 @@ class HC():
 			else:
 				region = (hc_rect.left, hc_rect.top, hc_rect.right-hc_rect.left,  hc_rect.bottom-hc_rect.top)
 			coords = pyscreeze.locateOnScreen(image, region=region)
+			if not coords and confidence < 1:
+				coords = pyscreeze.locateOnScreen(image, region=region, confidence=confidence)
 
 		if not coords and must_succeed:
 			log_error(f'Did not find image {description}')
@@ -149,4 +153,7 @@ class HC():
 
 if __name__ == '__main__':
 	hc = HC(None)
+	victory = hc.pages.get_page('a_victory')
+	pic = Image.open(f'ocrtest/victory_test.png')
+	print(victory.is_active(hc, screenshot=pic))
 

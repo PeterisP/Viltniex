@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 import pytesseract
-
+import datetime
 
 def normalize(im):
     newimdata = []
@@ -21,7 +21,15 @@ def normalize(im):
 
 def recognize(im):
 	norm = normalize(im)
-	return int(pytesseract.image_to_string(norm, config='--psm 7').replace(' ','').replace('O','0').replace('I','1').replace('l','1').replace('B','8').replace('S','5').replace('A','4').replace('Z','2').replace('g','8'))
+	digits = pytesseract.image_to_string(norm, config='--psm 7')
+	digits = digits.replace(' ','').replace('O','0').replace('I','1').replace('l','1').replace('B','8').replace('S','5').replace('A','4').replace('Z','2').replace('g','8')
+	try:
+		strength = int(digits)
+	except ValueError as e:
+		im.save(f'screenshots/unrecognized_strength_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
+		print('Failed to OCR digits!')
+		strength = 200000		
+	return strength
 
 if __name__ == '__main__':
 	for filename in os.listdir('ocrtest'):
