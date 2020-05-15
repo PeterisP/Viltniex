@@ -5,7 +5,7 @@ from ocr import recognize
 from PIL import ImageDraw
 from timeit import default_timer as timer
 
-BEATABLE_STRENGTH = 120000
+BEATABLE_STRENGTH = 125000
 
 
 STARTING = 1
@@ -312,6 +312,56 @@ class ArenaAgent():
 		print(f"Attacking enemy #{self.attacking_enemy.get('rank')} with strength {self.attacking_enemy.get('strength')}")
 		x, y = slots15[self.attacking_enemy['rank']-1]		
 		self.hc.human_click(x, y, x+165, y+85)
+
+
+class InvasionAgent():
+	def __init__(self, hc):
+		self.hc = hc
+
+	def act(self):
+		active_page, screenshot = self.hc.pages.active_page()
+		self.hc.log_event(active_page)
+		delay = 0.3
+		if not active_page:
+			self.hc.log_error("I don't know where I am ..")
+			delay = 2
+		elif active_page.name == 'timeout':
+			self.hc.human_click(425, 325, 536, 376) # 'Update' button
+		elif active_page.name in ['loading', 'a_combat']:
+			delay = 2
+		elif active_page.name == 'main':
+			self.hc.human_click(19, 431, 100, 517) # Bottom left corner 'Map'
+		elif active_page.name == 'map':
+			invasion = pyscreeze.locate('images/i_mapface.png', screenshot, confidence=0.9)
+			if invasion:
+				self.hc.human_click(invasion[0], invasion[1], invasion[0]+invasion[2], invasion[1]+invasion[3])
+				delay = 2
+			else:
+				self.hc.log_event('No invasions active!')
+				self.hc.stop_agents()								
+		elif active_page.name == 'i_map':
+			invasion = pyscreeze.locate('images/i_mapface2.png', screenshot, confidence=0.8)
+			if invasion:
+				self.hc.human_click(invasion[0], invasion[1], invasion[0]+invasion[2], invasion[1]+invasion[3])
+				delay = 1
+			else:
+				self.hc.human_click(19, 431, 100, 517) # Bottom left corner 'Map'
+		elif active_page.name == 'i_invasion':
+				self.hc.human_click(620, 430, 750, 475) # Attack
+				delay = 1
+		elif active_page.name in ['a_defeat', 'a_victory']:
+			self.hc.human_click(415, 465, 545, 525) # Home
+		elif active_page.name == 'i_victory':
+			self.hc.human_click(535, 460, 680, 500) # Home
+			self.hc.log_event('Invasions done!')
+			self.hc.stop_agents()								
+		else:
+			self.hc.log_error(f"I just don't know what to do with myself... {active_page.name}")
+			self.hc.screenshot(f'confused_ArenaAgent_{active_page.name}')
+			self.hc.stop_agents()
+			delay = 2
+
+		return delay
 
 
 

@@ -30,14 +30,16 @@ class Window(Frame):
         self.initButton.grid(column=1, row=0, padx=5, pady=5)
         arenaButton = Button(pogas, text='Arena', command=self.run_arena)
         arenaButton.grid(column=2, row=0, padx=5, pady=5)
+        invasionButton = Button(pogas, text='Invasion', command=self.run_invasion)
+        invasionButton.grid(column=3, row=0, padx=5, pady=5)
         stopButton = Button(pogas, text='Stop', command=self.stop_agents)
-        stopButton.grid(column=3, row=0, padx=5, pady=5)
+        stopButton.grid(column=4, row=0, padx=5, pady=5)
         screenshotButton = Button(pogas, text='Screenshot', command=self.screenshot)
-        screenshotButton.grid(column=4, row=0, padx=5, pady=5)
+        screenshotButton.grid(column=5, row=0, padx=5, pady=5)
         whereamiButton = Button(pogas, text='Where am I?', command=self.whereami)
-        whereamiButton.grid(column=5, row=0, padx=5, pady=5)
+        whereamiButton.grid(column=6, row=0, padx=5, pady=5)
 
-        self.buttons_that_need_hc = [arenaButton, screenshotButton, whereamiButton]
+        self.buttons_that_need_hc = [arenaButton, invasionButton, screenshotButton, whereamiButton]
 
     def init_hc(self):
         try:
@@ -56,6 +58,10 @@ class Window(Frame):
     def run_arena(self):
         assert self.hc is not None, 'HC connection not initialized'
         self.hc.run_arena()
+
+    def run_invasion(self):
+        assert self.hc is not None, 'HC connection not initialized'
+        self.hc.run_invasion()
 
     def stop_agents(self):
         assert self.hc is not None, 'HC connection not initialized'

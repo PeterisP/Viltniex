@@ -6,7 +6,8 @@ class Pages():
 		self.pages = [
 			#    name       	filename			     left top width height
 			Page('timeout',		'images/timeout.png',	(270, 140, 450, 300)),
-			Page('loading',		'images/loading.png', 	(160, 10,  800, 100)),			
+			Page('loading',		'images/loading.png', 	(160, 10,  800, 100)),
+			Page('chat',		'images/chat.png', 		(0,   0,   200, 50)),
 			Page('main', 		'images/main.png',		(20,  400, 100, 150)),
 			Page('map', 		'images/map.png',		(20,  400, 100, 150)),
 			Page('a_tickets',	'images/a_tickets.png',	(170, 120, 300, 60)),
@@ -24,7 +25,10 @@ class Pages():
 			Page('a_victory',	'images/a_victory.png',	(420, 95,  150, 50), confidence=0.9),
 			Page('a_end',		'images/a_end.png',		(840, 70,  100, 50)),
 			Page('a_end2',		'images/a_end2.png',	(790, 65,  150, 70)),
-			Page('a_store',		'images/a_store.png',	(230, 40,  250, 60))
+			Page('a_store',		'images/a_store.png',	(230, 40,  250, 60)),
+			Page('i_invasion',	'images/i_invasion.png',(400, 50,  150, 50)),
+			Page('i_map',		'images/i_map.png',		(10,  430, 150, 150)),
+			Page('i_victory',	'images/i_victory.png',	(500, 150, 300, 300)),
 		]
 		# TODO - timeout and loading may be confused!!
 		self.pages_by_name = {page.name:page for page in self.pages}

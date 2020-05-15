@@ -2,7 +2,7 @@ from pywinauto import Desktop, mouse
 import pyscreeze
 import datetime
 from pages import Page, Pages
-from agent import ArenaAgent
+from agent import ArenaAgent, InvasionAgent
 from random import gauss, randrange
 from PIL import ImageDraw, Image
 from win32api import GetCursorPos
@@ -41,6 +41,11 @@ class HC():
 	def run_arena(self):
 		self.log_event('Starting arena agent')
 		self.activeAgent = ArenaAgent(self)
+		self.poke_agent()
+
+	def run_invasion(self):
+		self.log_event('Starting invasion agent')
+		self.activeAgent = InvasionAgent(self)
 		self.poke_agent()
 
 	def poke_agent(self):
