@@ -28,18 +28,20 @@ class Window(Frame):
         quitButton.grid(column=0, row=0, padx=5, pady=5)
         self.initButton = Button(pogas, text='Connect', command=self.init_hc)
         self.initButton.grid(column=1, row=0, padx=5, pady=5)
-        arenaButton = Button(pogas, text='Arena', command=self.run_arena)
-        arenaButton.grid(column=2, row=0, padx=5, pady=5)
-        invasionButton = Button(pogas, text='Invasion', command=self.run_invasion)
-        invasionButton.grid(column=3, row=0, padx=5, pady=5)
-        stopButton = Button(pogas, text='Stop', command=self.stop_agents)
-        stopButton.grid(column=4, row=0, padx=5, pady=5)
         screenshotButton = Button(pogas, text='Screenshot', command=self.screenshot)
-        screenshotButton.grid(column=5, row=0, padx=5, pady=5)
+        screenshotButton.grid(column=2, row=0, padx=5, pady=5)
+        fullshotButton = Button(pogas, text='Fullshot', command=self.fullshot)
+        fullshotButton.grid(column=3, row=0, padx=5, pady=5)
         whereamiButton = Button(pogas, text='Where am I?', command=self.whereami)
-        whereamiButton.grid(column=6, row=0, padx=5, pady=5)
+        whereamiButton.grid(column=0, row=1, padx=5, pady=5)
+        arenaButton = Button(pogas, text='Arena', command=self.run_arena)
+        arenaButton.grid(column=1, row=1, padx=5, pady=5)
+        invasionButton = Button(pogas, text='Invasion', command=self.run_invasion)
+        invasionButton.grid(column=2, row=1, padx=5, pady=5)
+        stopButton = Button(pogas, text='Stop', command=self.stop_agents)
+        stopButton.grid(column=3, row=1, padx=5, pady=5)
 
-        self.buttons_that_need_hc = [arenaButton, invasionButton, screenshotButton, whereamiButton]
+        self.buttons_that_need_hc = [arenaButton, invasionButton, screenshotButton, fullshotButton, whereamiButton]
 
     def init_hc(self):
         try:
@@ -70,6 +72,10 @@ class Window(Frame):
     def screenshot(self):
         assert self.hc is not None, 'HC connection not initialized'
         self.hc.screenshot()
+
+    def fullshot(self):
+        assert self.hc is not None, 'HC connection not initialized'
+        self.hc.screenshot(full=True)
 
     def whereami(self, benchmark=False):
         assert self.hc is not None, 'HC connection not initialized'

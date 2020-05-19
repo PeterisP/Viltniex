@@ -5,7 +5,7 @@ from ocr import recognize
 from PIL import ImageDraw
 from timeit import default_timer as timer
 
-BEATABLE_STRENGTH = 125000
+BEATABLE_STRENGTH = 145000
 
 
 STARTING = 1
@@ -50,11 +50,21 @@ class ArenaAgent():
 		# self.hc.log_event(active_page)
 		delay = 0.3
 		if not active_page:
-			if not self.just_was_in_combat:
-				self.hc.log_error("I don't know where I am ..")
 			delay = 2
+			if self.first_arena_after_waiting:
+				self.first_arena_after_waiting = False
+				delay = 5
+			elif self.just_was_in_combat:
+				self.just_was_in_combat = False
+			else:
+				self.hc.log_error("I don't know where I am ..")
+				self.hc.screenshot('unknown', screenshot=screenshot)			
 		elif active_page.name == 'timeout':
 			self.hc.human_click(425, 325, 536, 376) # 'Update' button
+		elif active_page.name == 'maintenance':
+			self.hc.human_click(415, 325, 546, 376) # 'OK' button
+		elif active_page.name == 'chat':
+			self.hc.human_click(532, 224, 555, 260) # close
 		elif active_page.name == 'main':
 			self.hc.human_click(19, 431, 100, 517) # Bottom left corner 'Map'
 		elif active_page.name == 'map':
@@ -68,6 +78,13 @@ class ArenaAgent():
 			delay = 1
 		elif active_page.name == 'a_food':
 			self.hc.human_click(230, 440, 400, 480) # Participate
+			delay = 2
+		elif active_page.name == 'a_cancel':
+			self.hc.human_click(500, 325, 620, 375) # Close
+			delay = 1
+		elif active_page.name == 'a_asleep':
+			self.hc.human_click(525, 315, 655, 365) # Return
+			delay = 1
 		elif active_page.name == 'a_nofood':
 			self.hc.human_click(510, 330, 615, 375) # No
 			self.hc.log_error('Out of apples !')
@@ -92,15 +109,16 @@ class ArenaAgent():
 				if self.state == STARTING:
 					self.initialize_scan(screenshot)
 				if self.state == SCANNING:
+					delay = 0.5
 					self.scan_enemies(screenshot)
 				if self.state == FIGHTING:
 					self.attack_next_enemy(screenshot)
 		elif active_page.name in ['a_enemy', 'a_enemy2']:
 			if self.state == SCANNING:
 				strength_pic = screenshot.crop( (520, 230, 700, 255) )
-				i_location = pyscreeze.locate('images/a_i.png', strength_pic)
+				i_location = pyscreeze.locate('images/a_i.png', strength_pic, confidence=0.9)
 				if not i_location:
-					i_location = pyscreeze.locate('images/a_i2.png', strength_pic)
+					i_location = pyscreeze.locate('images/a_i2.png', strength_pic, confidence=0.9)
 				if not i_location:
 					self.hc.log_error('Could not find i')
 					self.hc.screenshot('i_not_found')
@@ -132,7 +150,10 @@ class ArenaAgent():
 					self.hc.human_click(760, 55, 790, 80) # X to close
 					delay = 2				
 		elif active_page.name in ['a_defeat', 'a_victory']:
-			if not self.just_was_in_combat:
+			if self.just_was_in_combat:
+				delay = 1
+				self.just_was_in_combat = False
+			else:
 				self.hc.human_click(415, 465, 545, 525) # Home
 				if not self.in_combatend:
 					self.hc.log_event(active_page.name)
@@ -141,8 +162,6 @@ class ArenaAgent():
 						self.victories = self.victories + 1
 					delay = 2
 					self.in_combatend = True
-			else:
-				delay = 1
 		elif active_page.name in ['a_end', 'a_end2']:
 			rank = self.find_me(screenshot)
 			self.hc.log_event(f'')
@@ -157,12 +176,12 @@ class ArenaAgent():
 			self.round = 1
 			# self.hc.stop_agents()
 			self.hc.human_click(805,  65, 940, 130) # Home
+			delay = 5
 		else:
 			self.hc.log_error(f"I just don't know what to do with myself... {active_page.name} {str(self.state)}")
 			self.hc.screenshot(f'confused_ArenaAgent_{active_page.name}')
 			self.hc.stop_agents()
-			delay = 2
-		self.just_was_in_combat = False
+			delay = 2		
 
 		return delay
 
@@ -253,6 +272,12 @@ class ArenaAgent():
 				attacked = ''
 				if enemy.get('attacked'):
 					attacked = '[x]'
+				if not enemy.get('rank'):
+					self.hc.log_error(f'enemy {enemy} has no rank')
+					enemy['rank'] = 0
+				if not enemy.get('strength'):
+					self.hc.log_error(f'enemy {enemy} has no strength')
+					enemy['strength'] = 200000
 				print(f"#{enemy.get('rank'): <2}: {enemy.get('strength'): <8} {attacked}")
 		return s
 
@@ -351,6 +376,7 @@ class InvasionAgent():
 				delay = 1
 		elif active_page.name in ['a_defeat', 'a_victory']:
 			self.hc.human_click(415, 465, 545, 525) # Home
+			# FIXME - use the new 'Next' button
 		elif active_page.name == 'i_victory':
 			self.hc.human_click(535, 460, 680, 500) # Home
 			self.hc.log_event('Invasions done!')

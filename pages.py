@@ -6,8 +6,9 @@ class Pages():
 		self.pages = [
 			#    name       	filename			     left top width height
 			Page('timeout',		'images/timeout.png',	(270, 140, 450, 300)),
+			Page('maintenance',	'images/maintenance.png',	(270, 120, 450, 300)),
 			Page('loading',		'images/loading.png', 	(160, 10,  800, 100)),
-			Page('chat',		'images/chat.png', 		(0,   0,   200, 50)),
+			Page('chat',		'images/chat.png', 		(0,   0,   200, 200), confidence=0.9),
 			Page('main', 		'images/main.png',		(20,  400, 100, 150)),
 			Page('map', 		'images/map.png',		(20,  400, 100, 150)),
 			Page('a_tickets',	'images/a_tickets.png',	(170, 120, 300, 60)),
@@ -15,6 +16,8 @@ class Pages():
 			Page('a_nofood',	'images/a_nofood.png',	(290, 150, 400, 150)),
 			Page('a_team',		'images/a_team.png',	(400, 25,  200, 50)),
 			Page('a_looking',	'images/a_looking.png',	(170, 310, 300, 50)),
+			Page('a_cancel',	'images/a_cancel.png',	(270, 130, 450, 300), confidence=0.9),
+			Page('a_asleep',	'images/a_asleep.png',	(440, 150, 300, 250), confidence=0.9),
 			Page('a_next',		'images/a_next.png',	(620, 0,   250, 50)),
 			Page('a_wait',		'images/a_wait.png',	(620, 0,   150, 50)),
 			Page('a_wait2',		'images/a_wait2.png',	(620, 0,   250, 50)),
@@ -45,8 +48,7 @@ class Pages():
 		for page in self.pages:
 			if page.is_active(self.hc, screenshot=screenshot):
 				return page, screenshot
-		self.hc.screenshot('unknown', screenshot=screenshot)
-		return None, None
+		return None, screenshot
 
 
 class Page():

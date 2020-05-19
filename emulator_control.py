@@ -148,9 +148,12 @@ class HC():
 				self.screenshot(f'didnotfind')
 		return coords  # FIXME - coord reference point may differ depending on params
 
-	def screenshot(self, prefix='screenshot', screenshot = None):
+	def screenshot(self, prefix='screenshot', screenshot = None, full=False):
 		if not screenshot:
-			screenshot = self.window.capture_as_image()
+			if full:
+				screenshot = self.bluestacks.capture_as_image()
+			else:
+				screenshot = self.window.capture_as_image()
 		now = datetime.datetime.now()			
 		filename = f'screenshots/{prefix}_{now:%Y%m%d_%H%M%S}.png'
 		screenshot.save(filename)
@@ -162,3 +165,6 @@ if __name__ == '__main__':
 	pic = Image.open(f'ocrtest/victory_test.png')
 	print(victory.is_active(hc, screenshot=pic))
 
+	cancel = hc.pages.get_page('a_cancel')
+	pic = Image.open(f'ocrtest/cancel_test.png')
+	print(cancel.is_active(hc, screenshot=pic))
