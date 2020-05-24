@@ -97,6 +97,9 @@ class HC():
 			log_error('Failed to find HustleCastle VM window - is it opened?')
 			raise Exception('Failed to find HustleCastle VM  window - is it opened?')
 
+		self.check_window_size()
+
+	def check_window_size(self):
 		bs_rect = self.bluestacks.rectangle() 
 		hc_rect = self.window.rectangle() 
 		bs_width = bs_rect.right-bs_rect.left
@@ -104,7 +107,9 @@ class HC():
 		hc_width = hc_rect.right-hc_rect.left
 		hc_height = hc_rect.bottom-hc_rect.top
 
-		if hc_width != 960 or hc_height != 540:
+		if hc_width == 960 and hc_height == 540:
+			return True
+		else:
 			log_event(f'Bluestacks {bs_width}x{bs_height}, HC {hc_width}x{hc_height}')
 			self.bluestacks.move_window(width=(bs_width-hc_width+960), height=(bs_height-hc_height+540))
 			bs_rect = self.bluestacks.rectangle() 
@@ -114,6 +119,9 @@ class HC():
 			hc_width = hc_rect.right-hc_rect.left
 			hc_height = hc_rect.bottom-hc_rect.top
 			log_event(f'Resized - Bluestacks {bs_width}x{bs_height}, HC {hc_width}x{hc_height}')
+			return False
+
+
 
 	# Verify if bluestacks window is active and visible by looking for the logo in coner
 	def verify_bluestacks(self):
@@ -125,20 +133,24 @@ class HC():
 
 	# region is left, top, width, height
 	def verify_image(self, image, region=None, must_succeed=False, description='', screenshot=None, confidence=1):
-		if screenshot:
-			coords = pyscreeze.locate(image, screenshot, region=region)
-			if not coords and confidence < 1:
-				coords = pyscreeze.locate(image, screenshot, region=region, confidence=confidence)
-		else:
-			hc_rect = self.window.rectangle()
-			if region:
-				assert len(region) == 4, 'verify_image needs a region with four items'
-				region = (region[0]+hc_rect.left, region[1]+hc_rect.top, region[2], region[3])
+		try:
+			if screenshot:
+				coords = pyscreeze.locate(image, screenshot, region=region)
+				if not coords and confidence < 1:
+					coords = pyscreeze.locate(image, screenshot, region=region, confidence=confidence)
 			else:
-				region = (hc_rect.left, hc_rect.top, hc_rect.right-hc_rect.left,  hc_rect.bottom-hc_rect.top)
-			coords = pyscreeze.locateOnScreen(image, region=region)
-			if not coords and confidence < 1:
-				coords = pyscreeze.locateOnScreen(image, region=region, confidence=confidence)
+				hc_rect = self.window.rectangle()
+				if region:
+					assert len(region) == 4, 'verify_image needs a region with four items'
+					region = (region[0]+hc_rect.left, region[1]+hc_rect.top, region[2], region[3])
+				else:
+					region = (hc_rect.left, hc_rect.top, hc_rect.right-hc_rect.left,  hc_rect.bottom-hc_rect.top)
+				coords = pyscreeze.locateOnScreen(image, region=region)
+				if not coords and confidence < 1:
+					coords = pyscreeze.locateOnScreen(image, region=region, confidence=confidence)
+		except Exception as e:
+			log_error(e)
+			coords = None
 
 		if not coords and must_succeed:
 			log_error(f'Did not find image {description}')

@@ -5,14 +5,21 @@ from ocr import recognize
 from PIL import ImageDraw
 from timeit import default_timer as timer
 
-BEATABLE_STRENGTH = 145000
+# Fight params
+# TODO - bring this configuration out to the GUI
+# BEATABLE_STRENGTH = 145000
+# USE_TICKETS = False
+# LOW_LEVEL = True
 
+BEATABLE_STRENGTH = 3300000
+USE_TICKETS = True
+LOW_LEVEL = False
 
 STARTING = 1
 SCANNING = 2
 FIGHTING = 3
 
-slots15 = [
+slots_15 = [
 (395, 12),
 (303, 118),
 (487, 118),
@@ -29,6 +36,26 @@ slots15 = [
 (579, 434),
 (764, 434),
 ]
+
+
+slots_10 = [
+(395, 65),
+(303, 170),
+(487, 170),
+(210, 275),
+(395, 275),
+(579, 275),
+(118, 381),
+(303, 381),
+(487, 381),
+(672, 381),
+]
+
+
+if LOW_LEVEL:
+	slots = slots_15
+else:
+	slots = slots_10
 
 class ArenaAgent():
 	def __init__(self, hc):
@@ -57,8 +84,9 @@ class ArenaAgent():
 			elif self.just_was_in_combat:
 				self.just_was_in_combat = False
 			else:
-				self.hc.log_error("I don't know where I am ..")
-				self.hc.screenshot('unknown', screenshot=screenshot)			
+				if self.hc.check_window_size():
+					self.hc.log_error("I don't know where I am ..")
+					self.hc.screenshot('unknown', screenshot=screenshot)			
 		elif active_page.name == 'timeout':
 			self.hc.human_click(425, 325, 536, 376) # 'Update' button
 		elif active_page.name == 'maintenance':
@@ -74,10 +102,16 @@ class ArenaAgent():
 			self.hc.human_click(685, 95, 830, 140) # Close
 			delay = 1
 		elif active_page.name == 'a_tickets':
-			self.hc.human_click(170, 130, 300, 160) # for food
+			if USE_TICKETS:
+				self.hc.human_click(230, 440, 400, 480) # Participate
+			else:	
+				self.hc.human_click(170, 130, 300, 160) # for food
 			delay = 1
 		elif active_page.name == 'a_food':
-			self.hc.human_click(230, 440, 400, 480) # Participate
+			if USE_TICKETS:
+				self.hc.human_click(330, 130, 460, 160) # for tickets
+			else:
+				self.hc.human_click(230, 440, 400, 480) # Participate
 			delay = 2
 		elif active_page.name == 'a_cancel':
 			self.hc.human_click(500, 325, 620, 375) # Close
@@ -114,14 +148,15 @@ class ArenaAgent():
 				if self.state == FIGHTING:
 					self.attack_next_enemy(screenshot)
 		elif active_page.name in ['a_enemy', 'a_enemy2']:
-			if self.state == SCANNING:
-				strength_pic = screenshot.crop( (520, 230, 700, 255) )
+			if self.state == SCANNING:				
+				strength_pic = screenshot.crop( (520, 230, 712, 257) )
 				i_location = pyscreeze.locate('images/a_i.png', strength_pic, confidence=0.9)
 				if not i_location:
 					i_location = pyscreeze.locate('images/a_i2.png', strength_pic, confidence=0.9)
 				if not i_location:
 					self.hc.log_error('Could not find i')
 					self.hc.screenshot('i_not_found')
+					strength = BEATABLE_STRENGTH+1
 				else:
 					strength_pic = strength_pic.crop( (0, 0, i_location[0]-8, 25) )
 					strength = recognize(strength_pic)
@@ -187,7 +222,7 @@ class ArenaAgent():
 
 
 	def find_me(self, screenshot):
-		for nr, slot in enumerate(slots15, 1):
+		for nr, slot in enumerate(slots, 1):
 			x, y = slot
 			rgb = screenshot.getpixel( (x-1, y-1) )
 			if rgb[0]==255 and rgb[1]==243 and rgb[2]==89:
@@ -203,7 +238,7 @@ class ArenaAgent():
 
 	def initialize_scan(self, screenshot):
 		self.state = SCANNING
-		self.enemies = {nr:None for nr in range(1, 15)}
+		self.enemies = {nr:None for nr in range(1, len(slots))}
 		self.scanning_enemy = None
 		nr = self.find_me(screenshot)
 		if nr:
@@ -214,7 +249,7 @@ class ArenaAgent():
 
 	def scan_enemies(self, screenshot):
 		self.scanning_enemy = None
-		for nr in range(1, 16):
+		for nr in range(1, len(slots)+1):
 			if not self.enemies.get(nr):
 				self.scanning_enemy = nr
 				break
@@ -226,7 +261,7 @@ class ArenaAgent():
 			self.state = FIGHTING
 			return
 
-		x, y = slots15[self.scanning_enemy-1]		
+		x, y = slots[self.scanning_enemy-1]		
 		self.enemies[self.scanning_enemy]={}
 		name_pic = screenshot.crop( (x+40, y+10, x+140, y+35) )
 		# name_pic.save(f'temp/name_{self.scanning_enemy}_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
@@ -252,7 +287,7 @@ class ArenaAgent():
 					# draw = ImageDraw.Draw(copy)
 					# draw.rectangle( (enemy_location[0], enemy_location[1], enemy_location[0]+enemy_location[2], enemy_location[1]+enemy_location[3]), outline='red', width=2)
 					# copy.save(f'screenshots/enemy_{nr}_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
-					for rank, slot in enumerate(slots15, 1):
+					for rank, slot in enumerate(slots, 1):
 						x, y = slot
 						if x < enemy_location[0] < x+50 and y < enemy_location[1] < y+20:
 							enemy['rank'] = rank
@@ -307,7 +342,7 @@ class ArenaAgent():
 		enemies = [enemy for enemy in self.enemies.values() if enemy.get('name') != 'ME!' and enemy.get('rank')]
 		enemies_by_strength = sorted(enemies, key=lambda enemy:enemy.get('strength'))[:5]
 		enemies_by_strength.reverse()	
-		print('Kandidāti pēc spēciņa:')		
+		print('Candidates for attack:')		
 		for enemy in enemies_by_strength:
 			print(f"#{enemy.get('rank')}: {enemy.get('strength')}")
 		for enemy in enemies_by_strength:
@@ -335,7 +370,7 @@ class ArenaAgent():
 		ranked = self.update_enemy_rankings(screenshot)
 		self.attacking_enemy = self.choose_next_enemy()
 		print(f"Attacking enemy #{self.attacking_enemy.get('rank')} with strength {self.attacking_enemy.get('strength')}")
-		x, y = slots15[self.attacking_enemy['rank']-1]		
+		x, y = slots[self.attacking_enemy['rank']-1]		
 		self.hc.human_click(x, y, x+165, y+85)
 
 
