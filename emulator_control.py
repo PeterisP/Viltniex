@@ -7,15 +7,6 @@ from random import gauss, randrange
 from PIL import ImageDraw, Image
 from win32api import GetCursorPos
 
-def log_event(message):
-	# TODO - lai iet uz textlogu
-	print(message)
-
-
-def log_error(message):
-	# TODO - lai iet uz textlogu
-	print(message)
-
 def random_between(low, high):
 	assert low < high, 'Random needs low < high'
 	middle = (high+low)/2
@@ -25,26 +16,21 @@ def random_between(low, high):
 			return int(sample)
 
 class HC():
-	def __init__(self, tkinterRoot):
+	def __init__(self, tkinterRoot, logger):
 		self.fetch_hc_window()
 		self.verify_bluestacks()
 		self.pages = Pages(self)
 		self.activeAgent = None
 		self.tkinterRoot = tkinterRoot
+		self.logger = logger
 
-	def log_event(self, message):
-		log_event(message)
-
-	def log_error(self, message):
-		log_error(message)
-
-	def run_arena(self):
-		self.log_event('Starting arena agent')
-		self.activeAgent = ArenaAgent(self)
+	def run_arena(self, beatable_strength, use_tickets, high_level):
+		self.logger.info('Starting arena agent')
+		self.activeAgent = ArenaAgent(self, beatable_strength, use_tickets, high_level)
 		self.poke_agent()
 
 	def run_invasion(self):
-		self.log_event('Starting invasion agent')
+		self.logger.info('Starting invasion agent')
 		self.activeAgent = InvasionAgent(self)
 		self.poke_agent()
 
@@ -56,7 +42,7 @@ class HC():
 		self.tkinterRoot.after(delay, self.poke_agent)
 
 	def stop_agents(self):
-		self.log_event('Stopping agents')
+		self.logger.info('Stopping agents')
 		self.activeAgent = None
 
 	def human_click(self, left, top, right, bottom, debug_screenshots=False):
@@ -86,7 +72,7 @@ class HC():
 				self.bluestacks = w
 				break
 		if not self.bluestacks:
-			log_error('Failed to find BlueStacks window - is it opened?')
+			self.logger.error('Failed to find BlueStacks window - is it opened?')
 			raise Exception('Failed to find BlueStacks window - is it opened?')
 
 		for c in self.bluestacks.children():		
@@ -94,7 +80,7 @@ class HC():
 				self.window = c
 				break
 		if not self.window:
-			log_error('Failed to find HustleCastle VM window - is it opened?')
+			self.logger.error('Failed to find HustleCastle VM window - is it opened?')
 			raise Exception('Failed to find HustleCastle VM  window - is it opened?')
 
 		self.check_window_size()
@@ -110,7 +96,7 @@ class HC():
 		if hc_width == 960 and hc_height == 540:
 			return True
 		else:
-			log_event(f'Bluestacks {bs_width}x{bs_height}, HC {hc_width}x{hc_height}')
+			self.logger.info(f'Bluestacks {bs_width}x{bs_height}, HC {hc_width}x{hc_height}')
 			self.bluestacks.move_window(width=(bs_width-hc_width+960), height=(bs_height-hc_height+540))
 			bs_rect = self.bluestacks.rectangle() 
 			hc_rect = self.window.rectangle() 
@@ -118,7 +104,7 @@ class HC():
 			bs_height = bs_rect.bottom-bs_rect.top
 			hc_width = hc_rect.right-hc_rect.left
 			hc_height = hc_rect.bottom-hc_rect.top
-			log_event(f'Resized - Bluestacks {bs_width}x{bs_height}, HC {hc_width}x{hc_height}')
+			self.logger.info(f'Resized - Bluestacks {bs_width}x{bs_height}, HC {hc_width}x{hc_height}')
 			return False
 
 
@@ -128,7 +114,7 @@ class HC():
 		bs_rect = self.bluestacks.rectangle() 
 		coords = pyscreeze.locateOnScreen('images/bluestacks.png', region=(bs_rect.left, bs_rect.top, 200, 100))
 		if not coords:
-			log_error('Failed to verify BlueStacks')
+			self.logger.error('Failed to verify BlueStacks')
 		return coords
 
 	# region is left, top, width, height
@@ -149,11 +135,11 @@ class HC():
 				if not coords and confidence < 1:
 					coords = pyscreeze.locateOnScreen(image, region=region, confidence=confidence)
 		except Exception as e:
-			log_error(e)
+			self.logger.error(e)
 			coords = None
 
 		if not coords and must_succeed:
-			log_error(f'Did not find image {description}')
+			self.logger.error(f'Did not find image {description}')
 			if description:				
 				self.screenshot(f'didnotfind_{description}')
 			else:
@@ -169,7 +155,7 @@ class HC():
 		now = datetime.datetime.now()			
 		filename = f'screenshots/{prefix}_{now:%Y%m%d_%H%M%S}.png'
 		screenshot.save(filename)
-		log_event(f'Took screenshot {filename}')
+		self.logger.error(f'Took screenshot {filename}')
 
 if __name__ == '__main__':
 	hc = HC(None)

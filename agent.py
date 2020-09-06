@@ -5,16 +5,6 @@ from ocr import recognize
 from PIL import ImageDraw
 from timeit import default_timer as timer
 
-# Fight params
-# TODO - bring this configuration out to the GUI
-# BEATABLE_STRENGTH = 145000
-# USE_TICKETS = False
-# LOW_LEVEL = True
-
-BEATABLE_STRENGTH = 3300000
-USE_TICKETS = True
-LOW_LEVEL = False
-
 STARTING = 1
 SCANNING = 2
 FIGHTING = 3
@@ -52,13 +42,8 @@ slots_10 = [
 ]
 
 
-if LOW_LEVEL:
-	slots = slots_15
-else:
-	slots = slots_10
-
 class ArenaAgent():
-	def __init__(self, hc):
+	def __init__(self, hc, beatable_strength, use_tickets, high_level):
 		self.hc = hc
 		self.state = STARTING
 		self.first_arena_after_waiting = False
@@ -70,11 +55,17 @@ class ArenaAgent():
 		self.victories = 0
 		self.start = timer()
 		self.match_start = None
-		# self.expected_pages=['main']
+
+		self.beatable_strength = beatable_strength
+		self.use_tickets = use_tickets
+		if high_level:
+			self.slots = slots_10
+		else:
+			self.slots = slots_15
 
 	def act(self):
 		active_page, screenshot = self.hc.pages.active_page()
-		# self.hc.log_event(active_page)
+		self.hc.logger.info(active_page)
 		delay = 0.3
 		if not active_page:
 			delay = 2
@@ -85,7 +76,7 @@ class ArenaAgent():
 				self.just_was_in_combat = False
 			else:
 				if self.hc.check_window_size():
-					self.hc.log_error("I don't know where I am ..")
+					self.hc.logger.error("I don't know where I am ..")
 					self.hc.screenshot('unknown', screenshot=screenshot)			
 		elif active_page.name == 'timeout':
 			self.hc.human_click(425, 325, 536, 376) # 'Update' button
@@ -102,13 +93,13 @@ class ArenaAgent():
 			self.hc.human_click(685, 95, 830, 140) # Close
 			delay = 1
 		elif active_page.name == 'a_tickets':
-			if USE_TICKETS:
+			if self.use_tickets:
 				self.hc.human_click(230, 440, 400, 480) # Participate
 			else:	
 				self.hc.human_click(170, 130, 300, 160) # for food
 			delay = 1
 		elif active_page.name == 'a_food':
-			if USE_TICKETS:
+			if self.use_tickets:
 				self.hc.human_click(330, 130, 460, 160) # for tickets
 			else:
 				self.hc.human_click(230, 440, 400, 480) # Participate
@@ -121,7 +112,7 @@ class ArenaAgent():
 			delay = 1
 		elif active_page.name == 'a_nofood':
 			self.hc.human_click(510, 330, 615, 375) # No
-			self.hc.log_error('Out of apples !')
+			self.hc.logger.error('Out of apples !')
 			self.hc.stop_agents()
 		elif active_page.name == 'a_team':
 			self.hc.human_click(320, 440, 460, 490) # Confirm
@@ -154,9 +145,9 @@ class ArenaAgent():
 				if not i_location:
 					i_location = pyscreeze.locate('images/a_i2.png', strength_pic, confidence=0.9)
 				if not i_location:
-					self.hc.log_error('Could not find i')
+					self.hc.logger.error('Could not find i')
 					self.hc.screenshot('i_not_found')
-					strength = BEATABLE_STRENGTH+1
+					strength = self.beatable_strength + 1
 				else:
 					strength_pic = strength_pic.crop( (0, 0, i_location[0]-8, 25) )
 					strength = recognize(strength_pic)
@@ -181,7 +172,7 @@ class ArenaAgent():
 					self.hc.human_click(635, 430, 770, 475) # To battle!
 					delay = 2
 				else:
-					self.hc.log_error('Attacking passive enemy..')					
+					self.hc.logger.error('Attacking passive enemy..')					
 					self.hc.human_click(760, 55, 790, 80) # X to close
 					delay = 2				
 		elif active_page.name in ['a_defeat', 'a_victory']:
@@ -191,7 +182,7 @@ class ArenaAgent():
 			else:
 				self.hc.human_click(415, 465, 545, 525) # Home
 				if not self.in_combatend:
-					self.hc.log_event(active_page.name)
+					self.hc.logger.info(active_page.name)
 					self.round = self.round + 1
 					if active_page.name == 'a_victory':
 						self.victories = self.victories + 1
@@ -199,11 +190,11 @@ class ArenaAgent():
 					self.in_combatend = True
 		elif active_page.name in ['a_end', 'a_end2']:
 			rank = self.find_me(screenshot)
-			self.hc.log_event(f'')
-			self.hc.log_event(f'==================================')
+			self.hc.logger.info(f'')
+			self.hc.logger.info(f'==================================')
 			if self.start and self.match_start:
-				self.hc.log_event(f'Arena ending - {(timer()-self.start)/60:.1f} min total, {(self.match_start-self.start)/60:.1f} min waiting')
-			self.hc.log_event(f'Rank {rank}, {self.victories} wins')
+				self.hc.logger.info(f'Arena ending - {(timer()-self.start)/60:.1f} min total, {(self.match_start-self.start)/60:.1f} min waiting')
+			self.hc.logger.info(f'Rank {rank}, {self.victories} wins')
 			self.state = STARTING
 			self.start = timer()
 			self.match_start = None
@@ -213,7 +204,7 @@ class ArenaAgent():
 			self.hc.human_click(805,  65, 940, 130) # Home
 			delay = 5
 		else:
-			self.hc.log_error(f"I just don't know what to do with myself... {active_page.name} {str(self.state)}")
+			self.hc.logger.error(f"I just don't know what to do with myself... {active_page.name} {str(self.state)}")
 			self.hc.screenshot(f'confused_ArenaAgent_{active_page.name}')
 			self.hc.stop_agents()
 			delay = 2		
@@ -222,7 +213,7 @@ class ArenaAgent():
 
 
 	def find_me(self, screenshot):
-		for nr, slot in enumerate(slots, 1):
+		for nr, slot in enumerate(self.slots, 1):
 			x, y = slot
 			rgb = screenshot.getpixel( (x-1, y-1) )
 			if rgb[0]==255 and rgb[1]==243 and rgb[2]==89:
@@ -231,14 +222,14 @@ class ArenaAgent():
 				# draw.rectangle( (x, y, x+160, y+80), outline='red', width=2)
 				# copy.save(f'screenshots/foundme_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
 				return nr
-		self.hc.log_error('Could not find me in screenshot')
+		self.hc.logger.error('Could not find me in screenshot')
 		screenshot.save(f'screenshots/couldnotfindme_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
 		return None
 
 
 	def initialize_scan(self, screenshot):
 		self.state = SCANNING
-		self.enemies = {nr:None for nr in range(1, len(slots))}
+		self.enemies = {nr:None for nr in range(1, len(self.slots))}
 		self.scanning_enemy = None
 		nr = self.find_me(screenshot)
 		if nr:
@@ -249,7 +240,7 @@ class ArenaAgent():
 
 	def scan_enemies(self, screenshot):
 		self.scanning_enemy = None
-		for nr in range(1, len(slots)+1):
+		for nr in range(1, len(self.slots)+1):
 			if not self.enemies.get(nr):
 				self.scanning_enemy = nr
 				break
@@ -261,7 +252,7 @@ class ArenaAgent():
 			self.state = FIGHTING
 			return
 
-		x, y = slots[self.scanning_enemy-1]		
+		x, y = self.slots[self.scanning_enemy-1]		
 		self.enemies[self.scanning_enemy]={}
 		name_pic = screenshot.crop( (x+40, y+10, x+140, y+35) )
 		# name_pic.save(f'temp/name_{self.scanning_enemy}_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
@@ -287,16 +278,16 @@ class ArenaAgent():
 					# draw = ImageDraw.Draw(copy)
 					# draw.rectangle( (enemy_location[0], enemy_location[1], enemy_location[0]+enemy_location[2], enemy_location[1]+enemy_location[3]), outline='red', width=2)
 					# copy.save(f'screenshots/enemy_{nr}_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
-					for rank, slot in enumerate(slots, 1):
+					for rank, slot in enumerate(self.slots, 1):
 						x, y = slot
 						if x < enemy_location[0] < x+50 and y < enemy_location[1] < y+20:
 							enemy['rank'] = rank
 				else:
-					self.hc.log_error(f'Could not find enemy {enemy} in screenshot')	
-					screenshot.save(f'screenshots/couldnotfindenemy_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
-					enemy.get('name_pic').save(f'screenshots/couldnotfindenemy2_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
+					self.hc.logger.error(f'Could not find enemy {enemy} in screenshot')	
+					# screenshot.save(f'screenshots/couldnotfindenemy_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
+					# enemy.get('name_pic').save(f'screenshots/couldnotfindenemy2_{datetime.datetime.now():%Y%m%d_%H%M%S}.png')
 			else:
-				self.hc.log_error(f'Could not find enemy {enemy} because no pic')
+				self.hc.logger.error(f'Could not find enemy {enemy} because no pic')
 
 		s = sorted(self.enemies.values(), key=lambda enemy:enemy.get('rank'))
 		print(f'Round {self.round} !!\n==========================')
@@ -308,16 +299,16 @@ class ArenaAgent():
 				if enemy.get('attacked'):
 					attacked = '[x]'
 				if not enemy.get('rank'):
-					self.hc.log_error(f'enemy {enemy} has no rank')
+					self.hc.logger.error(f'enemy {enemy} has no rank')
 					enemy['rank'] = 0
 				if not enemy.get('strength'):
-					self.hc.log_error(f'enemy {enemy} has no strength')
+					self.hc.logger.error(f'enemy {enemy} has no strength')
 					enemy['strength'] = 200000
 				print(f"#{enemy.get('rank'): <2}: {enemy.get('strength'): <8} {attacked}")
 		return s
 
 	def weak_above_me(self):		
-		weak = [enemy for enemy in self.enemies.values() if enemy.get('strength') < BEATABLE_STRENGTH and enemy.get('rank') < self.me.get('rank') and not enemy.get('attacked')]
+		weak = [enemy for enemy in self.enemies.values() if enemy.get('strength') < self.beatable_strength and enemy.get('rank') < self.me.get('rank') and not enemy.get('attacked')]
 		closest = sorted(weak, key=lambda enemy:enemy.get('rank'), reverse=True)
 		if closest:
 			print('Vājie virs manis:')		
@@ -328,7 +319,7 @@ class ArenaAgent():
 			return None
 
 	def weak_below_me(self):		
-		weak = [enemy for enemy in self.enemies.values() if enemy.get('strength') < BEATABLE_STRENGTH and enemy.get('rank') > self.me.get('rank') and not enemy.get('attacked')]
+		weak = [enemy for enemy in self.enemies.values() if enemy.get('strength') < self.beatable_strength and enemy.get('rank') > self.me.get('rank') and not enemy.get('attacked')]
 		closest = sorted(weak, key=lambda enemy:enemy.get('rank'), reverse=True)
 		if closest:
 			print('Vājie zem manis:')		
@@ -363,14 +354,14 @@ class ArenaAgent():
 		if candidate:
 			return candidate
 
-		self.hc.log_error(f'Could not choose an enemy, all attacked')
+		self.hc.logger.error(f'Could not choose an enemy, all attacked')
 		return self.enemies[1]
 
 	def attack_next_enemy(self, screenshot):
 		ranked = self.update_enemy_rankings(screenshot)
 		self.attacking_enemy = self.choose_next_enemy()
 		print(f"Attacking enemy #{self.attacking_enemy.get('rank')} with strength {self.attacking_enemy.get('strength')}")
-		x, y = slots[self.attacking_enemy['rank']-1]		
+		x, y = self.slots[self.attacking_enemy['rank']-1]		
 		self.hc.human_click(x, y, x+165, y+85)
 
 
@@ -380,10 +371,10 @@ class InvasionAgent():
 
 	def act(self):
 		active_page, screenshot = self.hc.pages.active_page()
-		self.hc.log_event(active_page)
+		self.hc.logger.info(active_page)
 		delay = 0.3
 		if not active_page:
-			self.hc.log_error("I don't know where I am ..")
+			self.hc.logger.error("I don't know where I am ..")
 			delay = 2
 		elif active_page.name == 'timeout':
 			self.hc.human_click(425, 325, 536, 376) # 'Update' button
@@ -397,7 +388,7 @@ class InvasionAgent():
 				self.hc.human_click(invasion[0], invasion[1], invasion[0]+invasion[2], invasion[1]+invasion[3])
 				delay = 2
 			else:
-				self.hc.log_event('No invasions active!')
+				self.hc.logger.info('No invasions active!')
 				self.hc.stop_agents()								
 		elif active_page.name == 'i_map':
 			invasion = pyscreeze.locate('images/i_mapface2.png', screenshot, confidence=0.8)
@@ -414,10 +405,10 @@ class InvasionAgent():
 			# FIXME - use the new 'Next' button
 		elif active_page.name == 'i_victory':
 			self.hc.human_click(535, 460, 680, 500) # Home
-			self.hc.log_event('Invasions done!')
+			self.hc.logger.info('Invasions done!')
 			self.hc.stop_agents()								
 		else:
-			self.hc.log_error(f"I just don't know what to do with myself... {active_page.name}")
+			self.hc.logger.error(f"I just don't know what to do with myself... {active_page.name}")
 			self.hc.screenshot(f'confused_ArenaAgent_{active_page.name}')
 			self.hc.stop_agents()
 			delay = 2
